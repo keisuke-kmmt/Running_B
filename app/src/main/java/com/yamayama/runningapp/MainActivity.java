@@ -13,9 +13,11 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
@@ -145,29 +147,35 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             switch (view.getId()) {
                 case R.id.record_start:
                     Log.d("debug","start, Perform action on click");
-                    record = true;
-                    break;
+                    if(record == false) {
+                        record = true;
+                        toastMake("測定を開始しました", 0, -200);
+                        break;
+                    }
                 case R.id.record_stop:
                     Log.d("debug","stop, Perform action on click");
-                    record = false;
+                    if(record == true){
+                        record = false;
 
-                    WriteDataCsv WriteData = new WriteDataCsv();
-                    ArrayList<String> Outdata = new ArrayList<String>();
-                    Integer lenth_acc = AccelerationX.size();
-                    Outdata.add("X,Y,Z");
-                    for(int i = 0;i < lenth_acc;i++){
-                        Outdata.add( String.valueOf( AccelerationX.get( i)) + "," + String.valueOf( AccelerationY.get( i)) + "," + String.valueOf( AccelerationZ.get( i)));
+                        WriteDataCsv WriteData = new WriteDataCsv();
+                        ArrayList<String> Outdata = new ArrayList<String>();
+                        Integer lenth_acc = AccelerationX.size();
+                        Outdata.add("X,Y,Z");
+                        for(int i = 0;i < lenth_acc;i++){
+                            Outdata.add( String.valueOf( AccelerationX.get( i)) + "," + String.valueOf( AccelerationY.get( i)) + "," + String.valueOf( AccelerationZ.get( i)));
+                        }
+                        Log.d("debug", Outdata.toString());
+                        Date nowdate = new Date();
+                        SimpleDateFormat dateformat1 = new SimpleDateFormat("yyyy_MM_dd_H_mm");
+                        String filename = dateformat1.format(nowdate);
+                        WriteData.Write(Outdata,"/Acceleration" + filename + ".csv");
+
+                        //リストを空にする
+                        AccelerationX.clear();
+                        AccelerationY.clear();
+                        AccelerationZ.clear();
+                        toastMake("測定を終了しました", 0, -200);
                     }
-                    Log.d("debug", Outdata.toString());
-                    Date nowdate = new Date();
-                    SimpleDateFormat dateformat1 = new SimpleDateFormat("yyyy_MM_dd_H_mm");
-                    String filename = dateformat1.format(nowdate);
-                    WriteData.Write(Outdata,"/Acceleration" + filename + ".csv");
-
-                    //リストを空にする
-                    AccelerationX.clear();
-                    AccelerationY.clear();
-                    AccelerationZ.clear();
                     break;
             }
         }
@@ -177,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            /*
+
             //ローパスフィルタ　重力の値を検出
             currentOrientationValues[0] = event.values[0] * 0.1f + currentOrientationValues[0] * (1.0f -0.1f);
             currentOrientationValues[1] = event.values[1] * 0.1f + currentOrientationValues[1] * (1.0f -0.1f);
@@ -186,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             currentAccelerationValues[0] = event.values[0] - currentOrientationValues[0];
             currentAccelerationValues[1] = event.values[1] - currentOrientationValues[1];
             currentAccelerationValues[2] = event.values[2] - currentOrientationValues[2];
-            */
+
             LineData data = mChart.getLineData();
             if(first_get == true) {
                 currentAccelerationValues[0] = event.values[0];
@@ -194,10 +202,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 currentAccelerationValues[2] = event.values[2];
                 first_get = false;
             }else{
+                /*
                 //ローパスフィルタ(滑らかになるはず)
                 currentAccelerationValues[0] = LPF_alpha *  old_x + (1.0f - LPF_alpha) * (event.values[0]);
                 currentAccelerationValues[1] = LPF_alpha *  old_y + (1.0f - LPF_alpha) * (event.values[1]);
                 currentAccelerationValues[2] = LPF_alpha *  old_z + (1.0f - LPF_alpha) * (event.values[2]);
+                */
+                currentAccelerationValues[0] = LPF_alpha *  old_x + (1.0f - LPF_alpha) * (currentAccelerationValues[0]);
+                currentAccelerationValues[1] = LPF_alpha *  old_y + (1.0f - LPF_alpha) * (currentAccelerationValues[1]);
+                currentAccelerationValues[2] = LPF_alpha *  old_z + (1.0f - LPF_alpha) * (currentAccelerationValues[2]);
+
             }
             old_x = currentAccelerationValues[0];
             old_y = currentAccelerationValues[1];
@@ -237,6 +251,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         set.setDrawValues(false);  //値を表示しない
 
         return set;
+    }
+
+    private void toastMake(String message, int x, int y){
+        Toast toast = Toast.makeText(this, message, Toast.LENGTH_LONG);
+        // 位置調整
+        toast.setGravity(Gravity.CENTER, x, y);
+        toast.show();
     }
 
 
