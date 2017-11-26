@@ -1,19 +1,17 @@
 package com.yamayama.runningapp;
 
 import android.Manifest;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.support.annotation.IdRes;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -30,8 +28,6 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-
-import static com.yamayama.runningapp.R.id.view;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -140,7 +136,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         final Button recordStop = (Button) findViewById(R.id.record_stop);
         recordStop.setOnClickListener(buttonClick);
 
+        //許可を申請する処理
+        if (ContextCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED){
+            Log.d("debug","permission OK");
+        }else{
+            //まだ許可を求める前の時、許可を求めるダイアログを表示します。
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+        }
+
+
     }
+
+
+    //クリックした時に動作する関数
     private View.OnClickListener buttonClick = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
@@ -149,9 +158,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     Log.d("debug","start, Perform action on click");
                     if(record == false) {
                         record = true;
-                        toastMake("測定を開始しました", 0, -200);
-                        break;
+                        toastMake("測定を開始しました");
+                    }else{
+                        toastMake("測定中です");
                     }
+                    break;
                 case R.id.record_stop:
                     Log.d("debug","stop, Perform action on click");
                     if(record == true){
@@ -174,7 +185,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         AccelerationX.clear();
                         AccelerationY.clear();
                         AccelerationZ.clear();
-                        toastMake("測定を終了しました", 0, -200);
+                        toastMake("測定を終了しました");
+                    }else{
+                        toastMake("測定を開始してください");
                     }
                     break;
             }
@@ -211,7 +224,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 currentAccelerationValues[0] = LPF_alpha *  old_x + (1.0f - LPF_alpha) * (currentAccelerationValues[0]);
                 currentAccelerationValues[1] = LPF_alpha *  old_y + (1.0f - LPF_alpha) * (currentAccelerationValues[1]);
                 currentAccelerationValues[2] = LPF_alpha *  old_z + (1.0f - LPF_alpha) * (currentAccelerationValues[2]);
-
             }
             old_x = currentAccelerationValues[0];
             old_y = currentAccelerationValues[1];
@@ -253,10 +265,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return set;
     }
 
-    private void toastMake(String message, int x, int y){
+    private void toastMake(String message){
         Toast toast = Toast.makeText(this, message, Toast.LENGTH_LONG);
         // 位置調整
-        toast.setGravity(Gravity.CENTER, x, y);
+        //toast.setGravity(Gravity.BOTTOM, x, y);
         toast.show();
     }
 
@@ -279,3 +291,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
 }
+
+
+
