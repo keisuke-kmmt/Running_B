@@ -14,7 +14,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 /**
- * Created by keisuke on 2017/11/22.
+ * Created by keisuke Watanabe on 2017/11/22.
  */
 
 public class WriteDataCsv {
